@@ -1,0 +1,1 @@
+export const baseUrl = 'https://vulm-1.onrender.com/';
