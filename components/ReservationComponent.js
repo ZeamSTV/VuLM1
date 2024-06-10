@@ -1,10 +1,12 @@
 import React, { Component } from 'react';
-import { StyleSheet, View, ScrollView, Text, Switch, Button, Alert } from 'react-native';
+import { StyleSheet, View, ScrollView, Text, Switch, Button, Alert,Platform  } from 'react-native';
 import { Icon } from 'react-native-elements';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { format } from 'date-fns';
 import * as Animatable from 'react-native-animatable';
+import * as Notifications from 'expo-notifications';
+import * as  Calendar  from 'expo-calendar';
 class ModalContent extends Component {
     render() {
         return (
@@ -73,9 +75,34 @@ class Reservation extends Component {
             </Animatable.View>
         );
     }
-    handleReservation() {
+    async handleReservation() {
         // alert(JSON.stringify(this.state));
         // this.setState({ showModal: true });
+        const { guests, smoking, date } = this.state;
+        try {
+            const { status } = await Calendar.requestCalendarPermissionsAsync();
+            if (status === 'granted') {
+                const defaultCalendarSource = Platform.OS === 'ios' ? await Calendar.getDefaultCalendarAsync() : { isLocalAccount: true, name: 'Expo Calendar' };
+                const newCalendarID = await Calendar.createEventAsync(
+                    defaultCalendarSource.id,
+                    {
+                        title: 'Con Fusion Table Reservation',
+                        startDate: date,
+                        endDate: new Date(date.getTime() + (2 * 60 * 60 * 1000)), // Assuming reservation lasts for 2 hours
+                        timeZone: 'Asia/Hong_Kong',
+                        availability: 'busy',
+                        location: '121, Clear Water Bay Road, Clear Water Bay, Kowloon, Hong Kong',        
+                        accessLevel: 'owner',
+                        details: `Number of Guests: ${guests}\nSmoking?: ${smoking ? 'Yes' : 'No'}`,
+                    }
+                );
+                console.log(`Event created in calendar with ID: ${newCalendarID}`);
+            } else {
+                console.log('Calendar permission not granted');
+            }
+        } catch (error) {
+            console.error('Error creating event in calendar:', error);
+        }
         Alert.alert(
             'Your Reservation OK?',
             `Number of Guests: ${this.state.guests}\nSmoking?: ${this.state.smoking ? 'Yes' : 'No'}\nDate and Time: ${format(this.state.date, 'dd/MM/yyyy - HH:mm')}`,
@@ -87,12 +114,32 @@ class Reservation extends Component {
                 },
                 {
                     text: 'OK',
-                    onPress: () => this.resetForm()
+                    onPress: () => {
+                        this.presentLocalNotification(this.state.date);
+                        this.resetForm();
+                      }
                 }
             ],
             { cancelable: false }
         );
     }
+    async presentLocalNotification(date) {
+        const { status } = await Notifications.requestPermissionsAsync();
+        if (status === 'granted') {
+          Notifications.setNotificationHandler({
+            handleNotification: async () => ({ shouldShowAlert: true, shouldPlaySound: true, shouldSetBadge: true })
+          });
+          Notifications.scheduleNotificationAsync({
+            content: {
+              title: 'Your Reservation',
+              body: 'Reservation for ' + date + ' requested',
+              sound: true,
+              vibrate: true
+            },
+            trigger: null
+          });
+        }
+      }
 }
 
 export default Reservation;

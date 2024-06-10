@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { View, Text, Linking } from 'react-native';
 import { Icon, Image } from 'react-native-elements';
-
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Menu from './MenuComponent';
 import Dishdetail from './DishdetailComponent';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer';
@@ -12,6 +12,8 @@ import Contact from './ContactComponent';
 import About from './AboutComponent';
 import Reservation from './ReservationComponent';
 import Favorites from './FavoriteComponent';
+import Login from './LoginComponent';
+import Register from './RegisterComponent';
 // redux
 import { connect } from 'react-redux';
 import { fetchLeaders, fetchDishes, fetchComments, fetchPromos } from '../redux/ActionCreators'; const mapDispatchToProps = (dispatch) => ({
@@ -21,7 +23,40 @@ import { fetchLeaders, fetchDishes, fetchComments, fetchPromos } from '../redux/
   fetchPromos: () => dispatch(fetchPromos())
 });
 import { baseUrl } from '../shared/baseUrl';
-
+function TabNavigatorScreen() {
+  const TabNavigator = createBottomTabNavigator();
+  return (
+    <TabNavigator.Navigator initialRouteName='Login'>
+      <TabNavigator.Screen name='Login' component={Login}
+        options={{
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (<Icon name='sign-in' type='font-awesome' size={size} color={color} />)
+        }} />
+      <TabNavigator.Screen name='Register' component={Register}
+        options={{
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (<Icon name='user-plus' type='font-awesome' size={size} color={color} />)
+        }} />
+    </TabNavigator.Navigator>
+  );
+}
+function LoginNavigatorScreen() {
+  const LoginNavigator = createStackNavigator();
+  return (
+    <LoginNavigator.Navigator initialRouteName='LoginRegister'
+      screenOptions={{
+        headerStyle: { backgroundColor: '#7cc' },
+        headerTintColor: '#fff',
+        headerTitleStyle: { color: '#fff' }
+      }}>
+      <LoginNavigator.Screen name='LoginRegister' component={TabNavigatorScreen}
+        options={({ navigation }) => ({
+          headerTitle: 'Login',
+          headerLeft: () => (<Icon name='menu' size={36} color='#fff' onPress={() => navigation.toggleDrawer()} />)
+        })} />
+    </LoginNavigator.Navigator>
+  );
+}
 function ReservationNavigatorScreen() {
   const ReservationNavigator = createStackNavigator();
   return (
@@ -160,6 +195,11 @@ function MainNavigatorScreen() {
   const MainNavigator = createDrawerNavigator();
   return (
     <MainNavigator.Navigator initialRouteName='HomeScreenr' drawerContent={(props) => <CustomDrawerContent {...props} />}>
+       <MainNavigator.Screen name='LoginScreen' component={LoginNavigatorScreen}
+        options={{
+          title: 'Login', headerShown: false,
+          drawerIcon: ({ focused, size }) => (<Icon name='sign-in' type='font-awesome' size={size} color={focused ? '#7cc' : '#ccc'} />)
+        }} />
       <MainNavigator.Screen name='HomeScreen' component={HomeNavigatorScreen}
         options={{
           title: 'Home', headerShown: false,
